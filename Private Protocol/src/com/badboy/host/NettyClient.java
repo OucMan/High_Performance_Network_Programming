@@ -3,9 +3,14 @@ package com.badboy.host;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.badboy.codec.NettyMessageDecoder;
 import com.badboy.codec.NettyMessageEncoder;
+import com.badboy.handshake.LoginAuthReqHandler;
+import com.badboy.heartbeat.HeartBeatReqHandler;
 import com.badboy.message.Header;
 import com.badboy.message.NettyMessage;
 
@@ -19,8 +24,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 
 public class NettyClient {
+	
+	private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	
 	public void connect(int port, String host) throws Exception {
 		EventLoopGroup group = new NioEventLoopGroup();
@@ -33,13 +41,29 @@ public class NettyClient {
 				protected void initChannel(SocketChannel arg0) throws Exception {
 					arg0.pipeline().addLast(new NettyMessageDecoder(1024*1024, 4, 4));
 					arg0.pipeline().addLast(new NettyMessageEncoder());
-					arg0.pipeline().addLast(new NettyClientHandler());
+					arg0.pipeline().addLast(new ReadTimeoutHandler(50));
+					arg0.pipeline().addLast(new LoginAuthReqHandler());
+					arg0.pipeline().addLast(new HeartBeatReqHandler());
 				}
 			});
 			ChannelFuture f = b.connect(host, port).sync();
 			f.channel().closeFuture().sync();
 		} finally {
-			group.shutdownGracefully();
+			executor.execute(new Runnable() {	
+				@Override
+				public void run() {
+					try {
+						TimeUnit.SECONDS.sleep(1);
+						try {
+							connect(8080, "127.0.0.1");
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
 		}
 	}
 	
