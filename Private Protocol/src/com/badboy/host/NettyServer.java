@@ -2,6 +2,8 @@ package com.badboy.host;
 
 import com.badboy.codec.NettyMessageDecoder;
 import com.badboy.codec.NettyMessageEncoder;
+import com.badboy.handshake.LoginAuthRespHandler;
+import com.badboy.heartbeat.HeartBeatRespHandler;
 import com.badboy.message.NettyMessage;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -14,6 +16,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 
 public class NettyServer {
 	
@@ -38,7 +41,9 @@ public class NettyServer {
 		protected void initChannel(SocketChannel arg0) throws Exception {
 			arg0.pipeline().addLast(new NettyMessageDecoder(1024*1024, 4, 4));
 			arg0.pipeline().addLast(new NettyMessageEncoder());
-			arg0.pipeline().addLast(new NettyServerHandler());
+			arg0.pipeline().addLast(new ReadTimeoutHandler(50));
+			arg0.pipeline().addLast(new LoginAuthRespHandler());
+			arg0.pipeline().addLast(new HeartBeatRespHandler());
 		}
 	}
 	
