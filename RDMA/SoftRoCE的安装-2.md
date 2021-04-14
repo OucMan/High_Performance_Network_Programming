@@ -115,3 +115,5 @@ iproute2是用来替代net-tools软件包的，是一组开源的网络工具集
 
 perftest是一个基于Verbs接口开发的开源RDMA性能测试工具，可以对支持RDMA技术的节点进行带宽和时延测试。
 
+注：本文主要是按照https://zhuanlan.zhihu.com/p/361740115这一文章进行操作的。
+
