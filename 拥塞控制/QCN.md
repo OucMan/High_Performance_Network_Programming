@@ -1,5 +1,9 @@
 # QCN拥塞控制算法
 
+## 论文名
+
+Data Center Transport Mechanisms: Congestion Control Theory and IEEE Standardization
+
 ## 概述
 
 QCN（Quantized Congestion Notification，量化拥塞通知）是一套应用于L2的端到端拥塞通知机制，通过交换机主动反向发送包含拥塞程度的通知报文，降低发送端的发送速率，又通过主动增速机制来尽可能地利用可用带宽，从而提高网络性能。QCN于2007年提出，其协议规范是IEEE标准(802.1Qau)，主要应用于数据中心场景。
