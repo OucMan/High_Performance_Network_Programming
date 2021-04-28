@@ -19,6 +19,8 @@ TIMELY为速率控制提供了一个框架，下图显示了它的三个组成�
 * Rate Computation Engine：将RTT信号转换为目标发送速率的计算引擎；
 * Rate Control Engine：在各段（64KB）之间插入延迟以达到目标速率。
 
+![TIMELY架构](https://github.com/OucMan/High_Performance_Network_Programming/blob/master/%E6%8B%A5%E5%A1%9E%E6%8E%A7%E5%88%B6/pic/timely-01.png)
+
 ### RTT Measurement Engine
 
 该组件实现了对RTT的测量。首先介绍一下时延。网络时延主要由四个部分组成：发送时延、传播时延、处理时延（网卡产生ACK的时延）和排队时延。论文将RTT定义为传播时延+排队时延。对于发送时延，就是网卡将数据包发送到链路上的时间，等于数据包的尺寸除以网卡带宽，处理时延，即网卡产生ACK的时延接近零，因此忽略不计。因此本文中RTT的计算如下式：
@@ -33,6 +35,8 @@ RTT = T*completion* - T*send* - seg.size / NIC*linerate*
 
 具体的拥塞控制算法如下图所示
 
+![TIMELY算法](https://github.com/OucMan/High_Performance_Network_Programming/blob/master/%E6%8B%A5%E5%A1%9E%E6%8E%A7%E5%88%B6/pic/timely-02.png)
+
 首先对new_rtt做一次判断，如果它小于阈值T*low*或者大于阈值T*high*，那就直接对发送速率进行增减。
 
 如果new_rtt落在了中间区域，那么首先就要对延时梯度进行计算。延时梯度等于最新的rtt减去上一个rtt再除以20 µs（微秒），它是一个无量纲的数字。如果梯度小于或等于零，网络可以有更高的速率，发送速率增加一个恒定的值来探测更多的带宽。如果梯度为正，则发送速率超过网络容量，并执行乘法速率递减。计算得到这个发送速率之后，在pacing engine中，使用调度器来处理流。它根据当前段的大小、流率和最后一次传输的时间计算当前段的发送时间，然后将该段放入优先队列中。
@@ -44,5 +48,13 @@ RTT = T*completion* - T*send* - seg.size / NIC*linerate*
 当准备好发送一条消息时，速率控制引擎将其分成多个段进行传输，然后将每个段依次发送到调度程序。调度程序使用段大小，流率（由速率计算引擎提供）和上次传输时间来计算当前段的发送时间以及适当的发送延迟，然后将该段放置在调度程序中的优先级队列中。过去具有发送时间的段以轮询方式进行服务；具有未来发送时间的段被排队。在经过发送延迟之后，速率控制引擎将分段传递到NIC，以作为数据包突发立即传输。
 
 
+
 ## 总结
+
+该论文中基于时延梯度的拥塞控制算法，即利用时延梯度来指示队列的增减。对于丢包现象，仍然使用PFC，同时，算法的参数多，如果准确地设置这些参数需要工作量。此外，最重要的是然硬件上已经避免了内核中可能的影响因素，但是一些不可避免的抖动会在反馈信号中引入延迟和噪声，影响拥塞检测的准确性。
+
+## 论文
+
+TIMELY: RTT-based Congestion Control for the Datacenter
+
 
